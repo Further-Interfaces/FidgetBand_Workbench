@@ -3,7 +3,7 @@ var port = new serial('/dev/cu.usbmodem1411', {
 	baudRate: 9600
 });
 
-var output = document.getElementById('leapPane')
+var bandOutput = document.getElementById('bandData');
 
 
 port.on('open', function() {
@@ -12,6 +12,7 @@ port.on('open', function() {
 
 port.on('data', function (data) {
   console.log('Data: ' + data);
+  bandOutput.innerHTML = "Data: " + data;
 });
 
 // open errors will be emitted as an error event
