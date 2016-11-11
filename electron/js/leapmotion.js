@@ -29,7 +29,7 @@ function concatJointPosition(id, position) {
 	return id + ": " + position[0] + ", " + position[1] + ", " + position[2] + "<br>";
 }
 
-var output = document.getElementById('leapoutput')
+var output = document.getElementById('leapPane')
 var frameString = "", handString = "", fingerString = "";
 var hand, finger;
 
