@@ -1,10 +1,14 @@
 #include <MultiAD5933.h>
 
-const byte addr2 = 16;
-const byte addr1 = 14; 
-const byte addr0 = 15;
+const byte mux_OUT_addr2 = 16;
+const byte mux_OUT_addr1 = 14; 
+const byte mux_OUT_addr0 = 15;
 
-const int numSensors = 1;
+const byte mux_IN_addr2 = 7;
+const byte mux_IN_addr1 = 8; 
+const byte mux_IN_addr0 = 9;
+
+const int numElectrodes = 8;
 
 const int LED = 17;
 
@@ -12,48 +16,69 @@ AD5933 sensor;
 
 void setup() {
   Serial.begin(9600);
-  //Wire.begin();
 
-  pinMode(addr0, OUTPUT);
-  pinMode(addr1, OUTPUT);
-  pinMode(addr2, OUTPUT);
+  pinMode(mux_OUT_addr2, OUTPUT);
+  pinMode(mux_OUT_addr1, OUTPUT);
+  pinMode(mux_OUT_addr0, OUTPUT);
+  pinMode(mux_IN_addr2, OUTPUT);
+  pinMode(mux_IN_addr1, OUTPUT);
+  pinMode(mux_IN_addr0, OUTPUT);
   pinMode(LED, OUTPUT);
 
-  for(int i = 0; i < numSensors; i++){
-    setSensor(i);
-    sensor.reset();
-    sensor.writeStartFreq(30000);
-    sensor.writeFreqStepVal(1000);
-    sensor.writeNumSteps(1);
-    //sensor.writeSettlingTimeCycles(10);
-    //sensor.standby();
-    if(i == 0){
-      sensor.initStartFreq();
-      sensor.startFreqSweep();
-    }else{
-      //sensor.initStartFreq();
-      sensor.startFreqSweep(); 
-    }
-    //sensor.startFreqSweep();
-  }
+  sensor.reset();
+  sensor.writeStartFreq(30000);
+  sensor.writeFreqStepVal(1000);
+  sensor.writeNumSteps(1);
+  sensor.writeSettlingTimeCycles(10);
+  sensor.standby();
+  sensor.initStartFreq();
+  sensor.startFreqSweep();
 }
 
 void loop() {
-  for(int i = 0; i < numSensors; i++){
-    setSensor(4);
-    //sensor.writeStartFreq(30000);
-    double imp = sensor.readMagnitude();
-    Serial.println(imp);
-  }
-  //Serial.println("-----");
+  measure();
+  Serial.println("-----");
   delay(500);
 }
 
-double setSensor(int i){
-  digitalWrite(addr0, (i & 1) ? HIGH : LOW);
-  i >>= 1;
-  digitalWrite(addr1, (i & 1) ? HIGH : LOW);
-  i >>= 1;
-  digitalWrite(addr2, (i & 1) ? HIGH : LOW);
+void measure() {
+  int numMeasurements = (numElectrodes * (numElectrodes - 1)) / 2;
+  for(int i = 0; i < numElectrodes-1; i++) {
+     for(int j = i+1; j < numElectrodes; j++){
+        transmit(i);
+        double val = receive(j);
+        Serial.println(val);
+     }
+  }
 }
+
+void transmit(int idx){
+  setOutputElectrode(idx);
+  sensor.initStartFreq();
+  sensor.startFreqSweep();
+}
+
+double receive(int idx){
+  setInputElectrode(idx);
+  double val = sensor.readMagnitude();
+  sensor.repeatFreq();
+  return val;
+}
+
+void setInputElectrode(int i){
+  digitalWrite(mux_IN_addr0, (i & 1) ? HIGH : LOW);
+  i >>= 1;
+  digitalWrite(mux_IN_addr1, (i & 1) ? HIGH : LOW);
+  i >>= 1;
+  digitalWrite(mux_IN_addr2, (i & 1) ? HIGH : LOW);
+}
+
+void setOutputElectrode(int i){
+  digitalWrite(mux_OUT_addr0, (i & 1) ? HIGH : LOW);
+  i >>= 1;
+  digitalWrite(mux_OUT_addr1, (i & 1) ? HIGH : LOW);
+  i >>= 1;
+  digitalWrite(mux_OUT_addr2, (i & 1) ? HIGH : LOW);
+}
+
 
